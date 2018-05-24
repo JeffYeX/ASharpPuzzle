@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Diagnostics;
 using CsvHelper;
+using System.Linq;
 
 namespace Puzzle
 {
@@ -26,13 +27,14 @@ namespace Puzzle
         private int[] mNodes;
         private int mSpaceIndex;
         private string mStateCode;
-        private int mCostf;
-        private int mCosth;
-        private int mCostg;
-        private int mCostp;
+        public int mCostf;
+        public int mCosth;
+        public int mCostg;
+        public int mCostp;
         private Heuristic mHeuristic;
         private State mParent;
         private const int Epsilon = 1;
+        public int level;
 
         internal State(State parent, int[] nodes, Heuristic heuristic)
         {
@@ -101,7 +103,7 @@ namespace Puzzle
 
             // Heuristic cost
             mCosth = GetHeuristicCost();
-
+            
             mCostf = mCosth + mCostg;
 
             mCostp = Math.Max(mCostg + Epsilon, mCostf);
@@ -351,13 +353,13 @@ namespace Puzzle
         {
             mStopWatch = new Stopwatch();
         }
-        
-        internal void Solve(int[] nodes, Heuristic heuristic, CsvWriter csv)
+
+        internal void Solve(int[] nodes, Heuristic heuristic, CsvWriter csv, int problemType)
         {
-            Start(nodes, heuristic, csv);
+            Start(nodes, heuristic, csv, problemType);
         }
-        
-        private void Start(int[] nodes, Heuristic heuristic, CsvWriter csv)
+
+        private void Start(int[] nodes, Heuristic heuristic, CsvWriter csv, int problemType)
         {
             int openStateIndex;
             int stateCount = -1;
@@ -366,7 +368,11 @@ namespace Puzzle
             HashSet<String> openStates = new HashSet<string>();
             MinPriorityQueue<State> openStateQueue = new MinPriorityQueue<State>(nodes.Length * 3);
             Dictionary<String, State> closedQueue = new Dictionary<string, State>(nodes.Length * 3);
+
             var endProcess = false;
+            var levelCountGenerated = new int[problemType + 1];
+            var levelCountExpanded = new int[problemType + 1];
+            var levelCountEvaluated = new int[problemType + 1];
 
             State state = new State(null, nodes, heuristic);
             openStateQueue.Enqueue(state);
@@ -386,14 +392,15 @@ namespace Puzzle
 
                 stateCount++;
 
-                // Is this final state 
-                /*
-                if (currentState.IsFinalState())
+                if (currentState.GetParent() == null)
                 {
-                    EndMeasure(stateCount);
-                    break;
+                    currentState.level = 0;
                 }
-                */
+                else
+                {
+                    levelCountExpanded[currentState.GetParent().level]++;
+                }
+
                 // Look into next state
                 currentState.GetNextStates(ref nextStates);
 
@@ -408,7 +415,17 @@ namespace Puzzle
                         closedState = null;
                         openState = null;
                         nextState = nextStates[i];
-                        //Console.WriteLine(nextState);
+
+                        if (currentState.level > levelCountGenerated.Length - 1)
+                        {
+                            Array.Resize(ref levelCountGenerated, currentState.level + 1);
+                            Array.Resize(ref levelCountExpanded, currentState.level + 1);
+                            Array.Resize(ref levelCountEvaluated, currentState.level + 1);
+                        }
+
+                        nextState.level = currentState.level + 1;
+                        levelCountGenerated[currentState.level]++;
+
                         if (nextState.IsFinalState())
                         {
                             EndMeasure(stateCount);
@@ -447,6 +464,7 @@ namespace Puzzle
                         // Either this is a new state, or better than previous one.
                         if (openState == null && closedState == null)
                         {
+                            levelCountEvaluated[currentState.level]++;
                             openStateQueue.Enqueue(nextState);
                             openStates.Add(nextState.GetStateCode());
                         }
@@ -456,17 +474,25 @@ namespace Puzzle
                 }
             }
 
-            //if (currentState != null && !currentState.IsFinalState())
-            //{
-            // No solution
-            //    currentState = null;
-            //}
-
             var steps = PuzzleSolved(currentState, stateCount);
             var goalState = "1*2*3*4*5*6*7*8*-1";
 
-            var record = new { Time = mStopWatch.ElapsedMilliseconds, State = "\"" + state.GetStateCode() + "\"", GoalState = goalState, Step = steps };
+            var levelCountGeneratedString = levelCountGenerated.Aggregate("", (current, item) => current + (item + "|"));
+            var levelCountEvaluatedString = levelCountEvaluated.Aggregate("", (current, item) => current + (item + "|"));
+            var levelCountExpandedString = levelCountExpanded.Aggregate("", (current, item) => current + (item + "|"));
+            var totalGenerated = levelCountGenerated.Sum();
+            var totalEvaluated = levelCountEvaluated.Sum();
+            var totalExpanded = levelCountExpanded.Sum();
+
+            var record = new { Time = mStopWatch.ElapsedTicks / 10000.0, State = "\"" + state.GetStateCode() + "\"", GoalState = goalState, Step = steps };
             csv.WriteRecord(record);
+
+            csv.WriteField(levelCountGeneratedString);
+            csv.WriteField(levelCountEvaluatedString);
+            csv.WriteField(levelCountExpandedString);
+            csv.WriteField(totalGenerated);
+            csv.WriteField(totalEvaluated);
+            csv.WriteField(totalExpanded);
             csv.NextRecord();
 
             //OnFinalState(currentState);

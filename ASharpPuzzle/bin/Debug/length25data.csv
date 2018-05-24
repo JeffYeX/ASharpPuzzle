@@ -1,9 +1,0 @@
-A#,MisplacedTiles,10,2,5*4*2*7*1*3*-1*8*6,10
-A#,MisplacedTiles,25,593,6*3*4*8*1*-1*7*5*2,25
-A#,MisplacedTiles,25,555,6*3*4*8*2*-1*7*1*5,25
-A#,ManhattanDistance,10,0,5*4*2*7*1*3*-1*8*6,10
-A#,ManhattanDistance,25,39,6*3*4*8*1*-1*7*5*2,25
-A#,ManhattanDistance,25,49,6*3*4*8*2*-1*7*1*5,25
-A#,DegradedManhattanDistance,10,0,5*4*2*7*1*3*-1*8*6,10
-A#,DegradedManhattanDistance,25,36,6*3*4*8*1*-1*7*5*2,25
-A#,DegradedManhattanDistance,25,51,6*3*4*8*2*-1*7*1*5,25
