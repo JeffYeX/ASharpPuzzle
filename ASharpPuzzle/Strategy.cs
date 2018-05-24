@@ -463,8 +463,9 @@ namespace Puzzle
             //}
 
             var steps = PuzzleSolved(currentState, stateCount);
+            var goalState = "1*2*3*4*5*6*7*8*-1";
 
-            var record = new { Time = mStopWatch.ElapsedMilliseconds, State = state.GetStateCode(), Step = steps };
+            var record = new { Time = mStopWatch.ElapsedMilliseconds, State = "\"" + state.GetStateCode() + "\"", GoalState = goalState, Step = steps };
             csv.WriteRecord(record);
             csv.NextRecord();
 

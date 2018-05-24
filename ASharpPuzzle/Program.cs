@@ -19,7 +19,7 @@ namespace ASharpPuzzle
             {
                 var csv = new CsvWriter(writer);
                 //var worksheet = workbook.Worksheets.Add("Sheet1");
-                var text = File.ReadAllLines(Directory.GetCurrentDirectory() + "\\25.pl");
+                var text = File.ReadAllLines(Directory.GetCurrentDirectory() + "\\10.pl");
 
                 foreach (Heuristic mHeuristic in Enum.GetValues(typeof(Heuristic)))
                 {
